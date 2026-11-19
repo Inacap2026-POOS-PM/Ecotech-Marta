@@ -2,7 +2,6 @@ from dominio.persona import Persona
 from dominio.empleado import Empleado
 from infraestructura.conexion import obtener_conexion
 
-
 # Tupla -> Objeto
 def fila_a_empleado(fila):
     return Empleado(
