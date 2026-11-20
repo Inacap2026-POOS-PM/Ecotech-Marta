@@ -1,0 +1,9 @@
+{
+  "clima_actual": {
+    "ciudad": "Concepcin",
+    "temperatura_c": 18.1,
+    "humedad_porcentaje": 66,
+    "codigo_clima": 0,
+    "consulta_fecha": "2026-11-20 13:50:43"
+  }
+}

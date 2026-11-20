@@ -31,14 +31,13 @@ class Conexion:
         self.session.headers.update({"User-Agent": "EcoTechSolutions/1.0"})
         self.autenticado = False
 
-        # Hash SHA-256 cargado desde variable de entorno (sin exponer contraseñas en texto plano)
+       
         hash_por_defecto = hashlib.sha256(bytes.fromhex("65636f746563683236")).hexdigest()
         hash_admin = os.getenv("ECOTECH_ADMIN_HASH", hash_por_defecto)
 
         self.usuario_administrador = {"admin": hash_admin}
         self._usuarios_registrados = dict(self.usuario_administrador)
 
-        # Datos de respaldo por defecto para ejecución 100% sin internet
         self._respaldo_indicadores = {
             "dolar": {"indicador": "DOLAR (OFFLINE)", "valor_clp": 950.0, "fecha": "Respaldo local"},
             "euro": {"indicador": "EURO (OFFLINE)", "valor_clp": 1030.0, "fecha": "Respaldo local"},
