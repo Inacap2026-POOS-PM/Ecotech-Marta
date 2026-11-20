@@ -1,8 +1,10 @@
 from dominio.persona import Persona
 from dominio.empleado import Empleado
+from dominio.exepciones import ErrorAutenticacionAPI
 from infraestructura.conexion import obtener_conexion
+from scrip import Conexion
 
-# Tupla -> Objeto
+
 def fila_a_empleado(fila):
     return Empleado(
         fila[0],
@@ -16,7 +18,7 @@ def fila_a_empleado(fila):
     )
 
 
-# Crear objeto Empleado
+
 empleado = Empleado(
     1,
     "12345678-9",
@@ -28,98 +30,61 @@ empleado = Empleado(
     950000
 )
 
-# Crear objeto Persona
-persona = Persona(
-    "11111111-1",
-    "Juan Perez"
-)
-
-# Polimorfismo
-objetos = [persona, empleado]
-
-for obj in objetos:
-    print(obj.mostrar_datos())
-
-print(empleado.nombre)
-print(empleado.mostrar_salario())
 
 
-# Conexión
-conexion = obtener_conexion()
+def ejecutar_menu_ecotech(empleado_actual):
+    conexion_api = Conexion()
+    print("\n=== SISTEMA DE GESTIÓN EXTERNA ECOTECH SOLUTIONS ===")
 
-if conexion:
-    print("Conexión exitosa")
+   
+    usuario = input("Ingrese usuario: ")
+    contrasenia = input("Ingrese contraseña: ")
 
-    cursor = conexion.cursor()
-
-    # Validaciones
-    nombre = empleado.nombre
-    salario = empleado.salario
-
-    if nombre == "":
-        print("Error: nombre vacío")
-
-    elif salario <= 0:
-        print("Error: salario inválido")
-
-    else:
-        print("Datos válidos")
+    
+    if not conexion_api.validar_usuario(usuario, contrasenia):
+        print("Cerrando el sistema por seguridad.")
+        return
 
     try:
+        while True:
+            print(f"\n--- Bienvenido/a {usuario} | Empleado: {empleado_actual.nombre} ---")
+            print("1. Consultar clima para planificación de proyectos")
+            print("2. Calcular pago internacional del empleado")
+            print("3. Salir")
 
-        # CREATE
-        cursor.execute("""
-        INSERT INTO empleado
-        (nombre, direccion, telefono, correo,
-        fecha_inicio_contrato, salario, id_depto)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            empleado.nombre,
-            empleado.direccion,
-            empleado.telefono,
-            empleado.correo,
-            empleado.fecha_inicio_contrato,
-            empleado.salario,
-            1
-        ))
+            opcion = input("Seleccione una opción (1-3): ").strip()
 
-        conexion.commit()
-        print("Empleado agregado")
+            if opcion == "1":
+                print("\nConsultando clima actual...")
+                clima = conexion_api.consultar_clima()
+                if clima:
+                    print(f"Ciudad: {clima['ciudad']}")
+                    print(f"Temperatura: {clima['temperatura_c']} °C")
+                    print(f"Humedad: {clima['humedad_porcentaje']}%")
+                    print(f"Fecha consulta: {clima['consulta_fecha']}")
 
-        # READ
-        cursor.execute("SELECT * FROM empleado")
+            elif opcion == "2":
+                moneda = input("Ingrese indicador a consultar (ej: dolar, euro): ").strip().lower()
+                datos_moneda = conexion_api.obtener_datos_api(moneda)
 
-        empleados = cursor.fetchall()
+                if datos_moneda:
+                    valor_moneda = datos_moneda["valor_clp"]
+                    salario_clp = float(empleado_actual.salario)
+                    pago_internacional = salario_clp / valor_moneda
 
-        for emp in empleados:
-            print(emp)
+                    print(f"\nIndicador: {datos_moneda['indicador']} (${valor_moneda} CLP al {datos_moneda['fecha']})")
+                    print(f"Salario base de {empleado_actual.nombre}: ${salario_clp:,.0f} CLP")
+                    print(f"Pago equivalente en {datos_moneda['indicador']}: {pago_internacional:,.2f}")
 
-        # UPDATE
-        cursor.execute("""
-        UPDATE empleado
-        SET salario = ?
-        WHERE id_empleado = ?
-        """,
-        (1000000, 1))
+            elif opcion == "3":
+                print("Sesión cerrada. Hasta pronto.")
+                break
+            else:
+                print("Opción no válida. Intente nuevamente.")
 
-        conexion.commit()
-        print("Empleado actualizado")
+    except ErrorAutenticacionAPI as e:
+        print(f"Error de seguridad: {e}")
 
-        # DELETE
-        cursor.execute("""
-        DELETE FROM empleado
-        WHERE id_empleado = ?
-        """,
-        (1,))
 
-        conexion.commit()
-        print("Empleado eliminado")
-
-    except Exception as e:
-        conexion.rollback()
-        print("Error durante la transacción:", e)
-
-    finally:
-        conexion.close()
-        print("Conexión cerrada")
+if __name__ == "__main__":
+    ejecutar_menu_ecotech(empleado)
